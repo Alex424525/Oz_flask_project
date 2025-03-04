@@ -1,0 +1,19 @@
+# .gitignore 내용
+
+# 가상 환경 폴더
+venv/
+
+# Python 캐시 파일들
+__pycache__/
+*.pyc
+
+# SQLite 데이터베이스 파일 (app.db)
+app.db
+
+# 환경설정 파일 (API 키 등)
+.env
+
+# IDE 설정 파일들 (예: PyCharm, VS Code)
+.idea/
+.vscode/
+
