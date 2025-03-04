@@ -2,46 +2,41 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# 간단한 사용자 데이터 저장 (메모리 리스트 활용)
-users = {
-    "admin": "admin123",
-    "guest": "guest123"
-}
+# 1. 기본 연결 확인 (GET)
+@app.route("/", methods=["GET"])
+def index():
+    return jsonify({"message": "API 서버가 정상적으로 연결되었습니다."})
 
-@app.route('/users', methods=['GET'])
-def get_users():
-    return jsonify(users)
+# 2. 메인 이미지 가져오기 (GET)
+@app.route("/image/main", methods=["GET"])
+def get_main_image():
+    return jsonify({"image_url": "https://example.com/main-image.jpg"})
 
-@app.route('/add', methods=['POST'])
-def add_user():
-    data = request.json
-    username = data.get("username")
-    password = data.get("password")
-    if not username or not password:
-        return jsonify({"error": "Username and password required"}), 400
-    if username in users:
-        return jsonify({"error": "User already exists"}), 400
-    users[username] = password
-    return jsonify({"message": "User added successfully"})
+# 3. 회원가입 (POST)
+@app.route("/signup", methods=["POST"])
+def signup():
+    data = request.get_json()
+    # 예시: 데이터 처리 로직 (DB에 저장 등)
+    return jsonify({"message": "회원가입 성공", "user": data}), 201
 
-@app.route('/edit/<username>', methods=['PUT'])
-def edit_user(username):
-    if username not in users:
-        return jsonify({"error": "User not found"}), 404
-    data = request.json
-    new_password = data.get("password")
-    if not new_password:
-        return jsonify({"error": "New password required"}), 400
-    users[username] = new_password
-    return jsonify({"message": "User updated successfully"})
+# 4. 특정 질문 가져오기 (GET)
+@app.route("/questions/<int:question_id>", methods=["GET"])
+def get_question(question_id):
+    # 예시: DB에서 해당 ID의 질문과 선택지 가져오기
+    question = {
+        "question_id": question_id,
+        "question": "What is your favorite color?",
+        "choices": ["Red", "Blue", "Green"]
+    }
+    return jsonify(question)
 
-@app.route('/delete/<username>', methods=['DELETE'])
-def delete_user(username):
-    if username not in users:
-        return jsonify({"error": "User not found"}), 404
-    del users[username]
-    return jsonify({"message": "User deleted successfully"})
+# 5. 질문 개수 확인 (GET)
+@app.route("/questions/count", methods=["GET"])
+def get_question_count():
+    # 예시: DB에서 질문 개수 가져오기
+    question_count = 10  # 예시 값
+    return jsonify({"count": question_count})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
 
