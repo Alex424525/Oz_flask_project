@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>회원가입</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    form { max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
+    label { display: block; margin-top: 10px; }
+    input, select, button { width: 100%; padding: 8px; margin-top: 5px; }
+    #message { text-align: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center;">회원가입</h1>
+  <form id="registerForm">
+    <label for="name">이름:</label>
+    <input type="text" id="name" name="name" required>
+
+    <label for="age">나이:</label>
+    <input type="number" id="age" name="age" required>
+
+    <label for="gender">성별:</label>
+    <select id="gender" name="gender" required>
+      <option value="">선택하세요</option>
+      <option value="남자">남자</option>
+      <option value="여자">여자</option>
+      <option value="기타">기타</option>
+    </select>
+
+    <label for="email">이메일:</label>
+    <input type="email" id="email" name="email" required>
+
+    <button type="submit">가입하기</button>
+  </form>
+
+  <div id="message"></div>
+
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const data = {
+        name: document.getElementById("name").value,
+        age: document.getElementById("age").value,
+        gender: document.getElementById("gender").value,
+        email: document.getElementById("email").value
+      };
+
+      try {
+        const response = await fetch("/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        document.getElementById("message").innerText = JSON.stringify(result);
+      } catch (error) {
+        document.getElementById("message").innerText = "회원가입 중 오류 발생.";
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
