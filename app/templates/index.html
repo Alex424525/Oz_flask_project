@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스트레스 테스트</title>
+    <style>
+        /* 기본 스타일 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right, #6dd5ed, #2193b0);
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 2px 2px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .choice-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            text-transform: uppercase;
+        }
+
+        .choice-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .selected {
+            background: rgba(255, 255, 255, 0.8);
+            color: #2193b0;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+            width: 45%;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 결과 스타일 */
+        #result {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* 처음으로 버튼 */
+        #restart-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transition: 0.3s;
+        }
+
+        #restart-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* 로딩 애니메이션 */
+        .loading {
+            font-size: 16px;
+            animation: blink 1.2s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="question">질문을 불러오는 중...</h2>
+        <div class="choices" id="choices"></div>
+        
+        <!-- 이전 & 다음 버튼 -->
+        <div class="nav-buttons">
+            <button id="prev-btn" class="nav-btn disabled" onclick="prevQuestion()" disabled>이전</button>
+            <button id="next-btn" class="nav-btn" onclick="nextQuestion()">다음</button>
+        </div>
+
+        <p id="result" class="hidden"></p>
+
+        <!-- 처음으로 버튼 추가 -->
+        <button id="restart-btn" onclick="restartTest()">처음으로</button>
+    </div>
+
+    <script>
+        let currentQuestion = 1;  // 현재 질문 번호
+        let totalScore = 0;       // 총 점수
+        let selectedChoice = null;  // 현재 선택한 버튼
+
+        function loadQuestion() {
+            fetch(`/questions/${currentQuestion}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("question").innerText = data.title;
+                    const choicesDiv = document.getElementById("choices");
+                    choicesDiv.innerHTML = ""; // 기존 선택지 삭제
+
+                    data.choices.forEach(choice => {
+                        let button = document.createElement("button");
+                        button.innerText = choice.text;
+                        button.classList.add("choice-btn");
+                        button.onclick = () => selectAnswer(button, choice.score);
+                        choicesDiv.appendChild(button);
+                    });
+
+                    document.getElementById("prev-btn").disabled = (currentQuestion === 1);
+                    document.getElementById("prev-btn").classList.toggle("disabled", currentQuestion === 1);
+                    document.getElementById("restart-btn").style.display = "none"; // 처음으로 버튼 숨김
+                })
+                .catch(error => console.error("질문을 불러오는 중 오류 발생:", error));
+        }
+
+        function selectAnswer(button, score) {
+            if (selectedChoice) {
+                selectedChoice.classList.remove("selected");
+            }
+            selectedChoice = button;
+            selectedChoice.classList.add("selected");
+
+            totalScore += score;
+
+            fetch("/submit_answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ score: score })
+            });
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 1) {
+                currentQuestion--;
+                loadQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < 4) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById("question").innerText = "결과를 분석하는 중...";
+            document.getElementById("choices").innerHTML = "<p class='loading'>잠시만 기다려 주세요...</p>";
+
+            fetch("/get_result")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("question").innerText = "테스트 결과";
+                    document.getElementById("choices").innerHTML = "";
+                    document.getElementById("result").innerText = data.result;
+                    
+                    // 버튼 숨기고 "처음으로" 버튼 표시
+                    document.getElementById("prev-btn").style.display = "none";
+                    document.getElementById("next-btn").style.display = "none";
+                    document.getElementById("restart-btn").style.display = "block";
+                });
+        }
+
+        function restartTest() {
+            location.reload();  // 페이지 새로고침 (초기 상태로 돌아감)
+        }
+
+        window.onload = loadQuestion;
+    </script>
+
+</body>
+</html>
